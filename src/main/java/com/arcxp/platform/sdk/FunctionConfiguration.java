@@ -1,16 +1,21 @@
 package com.arcxp.platform.sdk;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
+import com.amazonaws.services.lambda.runtime.Context;
 import com.arcxp.platform.sdk.broker.MessageBroker;
 import com.arcxp.platform.sdk.http.ArcHttpClient;
 import com.arcxp.platform.sdk.http.DefaultArcHttpClient;
+import com.datadoghq.datadog_lambda_java.DDLambda;
+import com.datadoghq.datadog_lambda_java.Headerable;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,6 +55,28 @@ public class FunctionConfiguration {
     @Bean
     public Function<Message<String>, Message<String>> handler() {
         return value -> {
+            String keyArn = System.getenv("DD_API_KEY_SECRET_ARN");
+ 
+            if (keyArn != null && !keyArn.isEmpty()) {
+                Context context = value.getHeaders().get("aws-context", Context.class);
+
+                Headerable headerPlayload = new Headerable() {
+
+                    @Override
+                    public Map<String, String> getHeaders() {
+                        return value.getHeaders().entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
+                    }
+
+                    @Override
+                    public void setHeaders(Map<String, String> headers) {
+                    }
+
+                };
+
+                DDLambda ddl = new DDLambda(headerPlayload, context);
+            }
+
             MessageHeaders headers = value.getHeaders();
             if (headers != null) {
                 MDC.put("AWSRequestId", headers.get("lambda-runtime-aws-request-id", String.class));

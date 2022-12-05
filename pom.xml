@@ -6,7 +6,7 @@
 
     <groupId>com.arcxp.platform</groupId>
     <artifactId>arcxp-ifx-java-sdk</artifactId>
-    <version>2.2.0</version>
+    <version>2.3.0</version>
 
     <description>The Arc XP IFX Java SDK enables developers to easily build custom solutions on the Arc XP platform
         using the Java runtime.
@@ -96,6 +96,17 @@
             <artifactId>httpmime</artifactId>
             <version>4.5.10</version>
         </dependency>
+        <dependency>
+            <groupId>com.datadoghq</groupId>
+            <artifactId>datadog-lambda-java</artifactId>
+            <version>1.4.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-lambda-java-events</artifactId>
+            <version>3.11.0</version>
+        </dependency>
+
     </dependencies>
     <dependencyManagement>
         <dependencies>
