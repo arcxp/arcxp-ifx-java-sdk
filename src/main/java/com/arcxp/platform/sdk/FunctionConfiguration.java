@@ -16,11 +16,7 @@ import com.arcxp.platform.sdk.http.ArcHttpClient;
 import com.arcxp.platform.sdk.http.DefaultArcHttpClient;
 import com.datadoghq.datadog_lambda_java.DDLambda;
 import com.datadoghq.datadog_lambda_java.Headerable;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -85,22 +81,6 @@ public class FunctionConfiguration {
             MDC.remove("AWSRequestId");
             return new GenericMessage<String>(response);
         };
-    }
-
-    /**
-     * Shared Object Mapper for Serialization.
-     *
-     * @return ObjectMapper
-     */
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper objectMapper = JsonMapper.builder()
-            .addModule(new JavaTimeModule())
-            .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
-            .build();
-        return objectMapper;
     }
 
     /**

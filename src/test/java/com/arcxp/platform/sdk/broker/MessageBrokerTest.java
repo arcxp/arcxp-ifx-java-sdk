@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.arcxp.platform.sdk.FunctionConfiguration;
+import com.arcxp.platform.sdk.Main;
 import com.arcxp.platform.sdk.annotations.ArcAsyncEvent;
 import com.arcxp.platform.sdk.annotations.ArcEndpoint;
 import com.arcxp.platform.sdk.annotations.ArcRequestIntercept;
@@ -103,8 +103,8 @@ public class MessageBrokerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        FunctionConfiguration functionConfig = new FunctionConfiguration();
-        this.objectMapper = functionConfig.objectMapper();
+        Main main = new Main();
+        this.objectMapper = main.objectMapper();
         calledHandlerName = null;
         calledPayload = null;
         setRequestHandlers();
