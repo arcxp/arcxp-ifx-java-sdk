@@ -50,7 +50,14 @@ public final class MessageBroker {
      * @return Handled Response
      */
     public String handle(String message) {
-        Payload payload = createPayload(message);
+        Payload payload;
+
+        try {
+            payload = createPayload(message);
+        } catch (Exception exception) {
+            LOG.error(exception.getMessage(), exception);
+            throw new EventPayloadException();
+        }
 
         if (payload.getTypeId() == 1 /*Event*/) {
             processPayload(payload);
@@ -125,7 +132,7 @@ public final class MessageBroker {
                     } else {
                         vals = annotation.value();
                     }
-                    rplKey = rpl.getUri();
+                    rplKey = addNamespace(rpl.getUri());
                 } else if (rpl.getTypeId() == 5) {
                     ArcSyncEvent annotation = requestHandler.getClass().getAnnotation(ArcSyncEvent.class);
                     if (annotation == null) {
@@ -154,19 +161,46 @@ public final class MessageBroker {
             LOG.error("Unable to deserialize", e);
         }
 
-        if (node.has("eventType")) {
-            payload = new EventPayload();
-            payload.setKey(addNamespace(node.get("eventType").asText()));
-            payload.setTypeId(1);
-            ((EventPayload) payload).setTime(new Date(node.get("eventTime").asLong()));
-        } else if (node.has("key")) {
-            payload = new RequestPayload();
-            RequestPayload rpl = (RequestPayload) payload;
-            rpl.setUuid(node.get("uuid").asText());
-            rpl.setKey(addNamespace(node.get("key").asText()));
-            rpl.setTypeId(node.get("typeId").asInt());
-            rpl.setUri(node.get("uri").asText());
-            rpl.setCurrentUserId(node.get("currentUserId").asText());
+        if (node.has("version") && node.get("version").asInt() > 1) {
+            int typeId = node.get("typeId").asInt();
+            if (typeId == 1 || typeId == 5) {
+                if (typeId == 1) {
+                    payload = new EventPayload();
+                } else {
+                    payload = new RequestPayload();
+                    RequestPayload rpl = (RequestPayload) payload;
+                    rpl.setCurrentUserId(node.get("currentUserId").asText());
+                }
+                payload.setVersion(node.get("version").asInt());
+                payload.setKey(addNamespace(node.get("eventName").asText()));
+                payload.setTypeId(typeId);
+
+                // optional fields
+                if (node.hasNonNull("eventTime")) {
+                    payload.setTime(new Date(node.get("eventTime").asLong()));
+                }
+                if (node.hasNonNull("uuid")) {
+                    payload.setUuid(node.get("uuid").asText());
+                }
+            }
+        } else {
+            // Legacy structure
+            if (node.has("eventType")) {
+                payload = new EventPayload();
+                payload.setVersion(1);
+                payload.setKey(addNamespace(node.get("eventType").asText()));
+                payload.setTypeId(1);
+                ((EventPayload) payload).setTime(new Date(node.get("eventTime").asLong()));
+            } else if (node.has("key")) {
+                payload = new RequestPayload();
+                payload.setVersion(1);
+                RequestPayload rpl = (RequestPayload) payload;
+                rpl.setUuid(node.get("uuid").asText());
+                rpl.setKey(addNamespace(node.get("key").asText()));
+                rpl.setTypeId(node.get("typeId").asInt());
+                rpl.setUri(node.get("uri").asText());
+                rpl.setCurrentUserId(node.get("currentUserId").asText());
+            }
         }
 
         payload.setBody((ObjectNode) node.get("body"));

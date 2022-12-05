@@ -37,7 +37,9 @@ phases:
       - |
         if [ -n "$versionNumber" ] || [ "$increaseMinor" = true ] ; then
           echo "Upload runtime SDK Javadoc"
-          aws s3 cp target/apidocs "s3://arc-learning-center-static/docs/javadoc/ifx/sdk/$gitTagVersionNumber/" --recursive --acl public-read
+          export s3Uri=s3://arc-learning-center-static/docs/javadoc/ifx/sdk
+          aws s3 cp target/apidocs "$s3Uri/latest/" --recursive --acl public-read
+          aws s3 cp target/apidocs "$s3Uri/$gitTagVersionNumber/" --recursive --acl public-read
         fi
       - git add .
       - git commit -a -m "Commited on version ${gitTagVersionNumber}"

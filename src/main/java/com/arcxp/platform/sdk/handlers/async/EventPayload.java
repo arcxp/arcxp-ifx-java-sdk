@@ -1,7 +1,5 @@
 package com.arcxp.platform.sdk.handlers.async;
 
-import java.util.Date;
-
 import com.arcxp.platform.sdk.handlers.Payload;
 
 /**
@@ -9,15 +7,4 @@ import com.arcxp.platform.sdk.handlers.Payload;
  */
 
 public final class EventPayload extends Payload {
-    private Date time;
-
-
-    public Date getTime() {
-        return time;
-    }
-
-
-    public void setTime(Date time) {
-        this.time = time;
-    }
 }

@@ -1,5 +1,7 @@
 package com.arcxp.platform.sdk.handlers;
 
+import java.util.Date;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
@@ -7,9 +9,25 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 
 public class Payload {
+    private int version;
     private String key;
     private ObjectNode body;
     private int typeId;
+    private Date time;
+    private String uuid;
+
+    /**
+     * The version of the payload.
+     *
+     * @return The Version
+     */
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
 
     /**
      * The Event/Request key that is the source of this payload.
@@ -40,11 +58,11 @@ public class Payload {
     /**
      * The type of request.
      * Ex
-     * 1 - Event
+     * 1 - Async Event
      * 2 - Request Intercepter
      * 3 - Response Intercepter
      * 4 - Custom Endpoint
-     *
+     * 5 - Sync Event
      * @return The type
      */
     public int getTypeId() {
@@ -53,5 +71,31 @@ public class Payload {
 
     public void setTypeId(int typeId) {
         this.typeId = typeId;
+    }
+
+    /**
+     * The event time.
+     *
+     * @return The Time
+     */
+    public Date getTime() {
+        return time;
+    }
+
+    public void setTime(Date time) {
+        this.time = time;
+    }
+
+    /**
+     * Randomly Generated UUID associated with the event payload from the calling application.
+     *
+     * @return The UUID
+     */
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }
