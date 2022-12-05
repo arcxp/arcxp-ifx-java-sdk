@@ -1,0 +1,46 @@
+version: 0.2
+env:
+  git-credential-helper: yes
+phases:
+  install:
+    runtime-versions:
+      java: corretto8
+    commands:
+      - git config --global user.email "infbot-ifx@washpost.com"
+      - git config --global user.name "Infbot IFX"
+  pre_build:
+    commands:
+      - echo "Getting the authentication token"
+      - export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain $codeArtifactDomain --domain-owner 026770442138 --query authorizationToken --output text`
+  build:
+    commands:
+      - echo "Triggering build"
+      - git checkout master
+      - |
+        if [ -n "$versionNumber" ] ; then
+          if [[ $versionNumber =~ ^[0-9]+(\.[0-9]+){2}(\-[0-9a-zA-Z]+)?$ ]]; then
+            echo "Increase the version to $versionNumber"
+            ./mvnw build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion=$versionNumber
+          else
+            echo "The versionNumber format provided doesn't meet the requirement"
+            exit 1
+          fi
+        elif [ "$increaseMinor" = true ] ; then
+          echo "Increase the minor version"
+          ./mvnw build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.nextMinorVersion}.0
+        else
+          echo "Increase the build number"
+          ./mvnw build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-\${parsedVersion.nextBuildNumber}
+        fi
+      - ./mvnw -s .mvn/wrapper/settings.xml clean install deploy
+      - export gitTagVersionNumber=$(mvn -q -s $CODEBUILD_SRC_DIR/.mvn/wrapper/settings.xml -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+      - |
+        if [ -n "$versionNumber" ] || [ "$increaseMinor" = true ] ; then
+          echo "Upload runtime SDK Javadoc"
+          aws s3 cp target/apidocs "s3://arc-learning-center-static/docs/javadoc/ifx/sdk/$gitTagVersionNumber/" --recursive --acl public-read
+        fi
+      - git add .
+      - git commit -a -m "Commited on version ${gitTagVersionNumber}"
+      - git push --set-upstream origin master
+      - git tag ${gitTagVersionNumber}
+      - git push origin --tags

@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+    options { 
+        disableConcurrentBuilds()
+    }
+    
+    stages {
+        stage('Init Terraform') {
+           steps {
+           		sh 'wget https://releases.hashicorp.com/terraform/0.14.10/terraform_0.14.10_linux_amd64.zip'
+      			sh 'unzip terraform_0.14.10_linux_amd64.zip -d terraform'
+      			sh 'chmod +x terraform/terraform'
+      			sh 'cd terraform && ./terraform init'
+      			sh 'cd terraform && ./terraform apply -auto-approve'
+           }
+        }
+        stage('Build') {
+        	environment {
+		        CODEARTIFACT_AUTH_TOKEN = """${sh(
+		                returnStdout: true,
+		                script: 'aws codeartifact get-authorization-token --domain com-arcpublishing-platform --domain-owner 041979207332 --query authorizationToken --output text'
+		            )}"""
+		    }
+            steps {
+                echo 'Build Arc Platform SDK.'
+                sh './mvnw -s .mvn/wrapper/settings.xml clean install deploy'
+            }
+        }
+    }
+    post {
+        failure{
+            emailext(
+                body: '',
+                recipientProviders: [culprits()],
+                replyTo: 'arc-commerce@washpost.com',
+                subject: "Build Failing ${currentBuild.fullDisplayName}"
+            )
+        }
+    }
+}
+

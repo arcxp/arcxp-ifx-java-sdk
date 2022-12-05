@@ -1,0 +1,10 @@
+/target/
+/bin/
+/.classpath
+/.project
+/arc-platform-sdk.iml
+/.idea/
+/.settings/
+/.mvn/wrapper/wrapper.iml
+/.mvn/wrapper/MavenWrapperDownloader.java
+.DS_Store
