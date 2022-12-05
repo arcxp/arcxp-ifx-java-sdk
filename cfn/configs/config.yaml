@@ -10,6 +10,9 @@ context:
         codeArtifactDomain: com-arcpublishing-platform-prod
         increaseMinor: false
         versionNumber: "\"\""
+      ssm_vars:
+        GITHUB_TOKEN: /bootstrap/secrets/github-token
       buildspec: codebuild/buildspec-build.yml
       sourceLocation: https://github.com/WPMedia/arcxp-ifx-java-sdk.git
+      timeout: 10
       branchName: master

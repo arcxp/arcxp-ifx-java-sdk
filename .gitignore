@@ -8,3 +8,4 @@
 /.mvn/wrapper/wrapper.iml
 /.mvn/wrapper/MavenWrapperDownloader.java
 .DS_Store
+/codeql/

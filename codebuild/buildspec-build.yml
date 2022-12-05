@@ -8,6 +8,9 @@ phases:
     commands:
       - git config --global user.email "infbot-ifx@washpost.com"
       - git config --global user.name "Infbot IFX"
+      - wget https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz
+      - tar -xvzf ./codeql-bundle-linux64.tar.gz
+      - rm codeql-bundle-linux64.tar.gz
   pre_build:
     commands:
       - echo "Getting the authentication token"
@@ -46,3 +49,7 @@ phases:
       - git push --set-upstream origin master
       - git tag ${gitTagVersionNumber}
       - git push origin --tags
+      - mkdir codeql/output
+      - codeql/codeql database create --language=java codeql/output/java-database
+      - codeql/codeql database analyze codeql/output/java-database codeql/java-queries:codeql-suites/java-security-and-quality.qls --format=sarif-latest --sarif-category=java --output=codeql/output/java-results.sarif --download
+      - codeql/codeql github upload-results --repository=WPMedia/arcxp-ifx-java-sdk --ref refs/tags/${gitTagVersionNumber} --sarif codeql/output/java-results.sarif
