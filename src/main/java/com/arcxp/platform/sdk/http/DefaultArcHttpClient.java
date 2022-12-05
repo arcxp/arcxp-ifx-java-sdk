@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -170,7 +171,9 @@ public class DefaultArcHttpClient implements ArcHttpClient {
                 arcResponse.setStatus(code);
                 HttpEntity entityResponse = response.getEntity();
                 content = EntityUtils.toByteArray(entityResponse);
-                if (responseClass.isAssignableFrom(ObjectNode.class)) {
+                if (ArrayUtils.isEmpty(content)) {
+                    arcResponse.setData(null);
+                } else if (responseClass.isAssignableFrom(ObjectNode.class)) {
                     ObjectNode node = (ObjectNode) objectMapper.readTree(content);
                     node.put("httpStatusCode", code);
                     arcResponse.setData(node);
