@@ -16,6 +16,8 @@ public class Payload {
     private Date time;
     private String uuid;
 
+    private String currentUserId;
+
     /**
      * The version of the payload.
      *
@@ -97,5 +99,13 @@ public class Payload {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public String getCurrentUserId() {
+        return currentUserId;
+    }
+
+    public void setCurrentUserId(String currentUserId) {
+        this.currentUserId = currentUserId;
     }
 }

@@ -10,7 +10,6 @@ public final class RequestPayload extends Payload {
 
     private String uri;
 
-    private String currentUserId;
 
     /**
      * An error that is generated and thrown during the request to be sent back to the calling application.
@@ -38,18 +37,5 @@ public final class RequestPayload extends Payload {
     @Deprecated
     public void setUri(String uri) {
         this.uri = uri;
-    }
-
-    /**
-     * The User that generated the request on the calling application.
-     *
-     * @return The user id on the calling application
-     */
-    public String getCurrentUserId() {
-        return currentUserId;
-    }
-
-    public void setCurrentUserId(String currentUserId) {
-        this.currentUserId = currentUserId;
     }
 }

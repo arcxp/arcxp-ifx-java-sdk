@@ -271,7 +271,7 @@ public class MessageBrokerTest {
         // Create sample payload
         String eventPayloadJson =
             "{\"eventName\": \"pagebuilder:VERIFY_EMAIL\", \"version\": 2, \"typeId\": 1, \"eventTime\": 1648496000, "
-                + "\"body\": {\"test\": \"async body\"}}";
+                + "\"currentUserId\": \"\", \"body\": {\"test\": \"async body\"}}";
 
         ObjectNode node = (ObjectNode) this.objectMapper.readTree(eventPayloadJson);
         when(this.objectMapperMock.readTree(anyString())).thenReturn(node);

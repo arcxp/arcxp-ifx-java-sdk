@@ -9,3 +9,7 @@
 /.mvn/wrapper/MavenWrapperDownloader.java
 .DS_Store
 /codeql/
+# IFX
+cfn/configs/
+codebuild/
+codequality/

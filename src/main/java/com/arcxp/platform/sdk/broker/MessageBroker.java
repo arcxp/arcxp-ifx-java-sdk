@@ -100,7 +100,7 @@ public final class MessageBroker {
                 String rplKey = rpl.getKey();
                 if (rpl.getTypeId() == 2) {
                     ArcRequestIntercept legacyAnnotation = requestHandler.getClass()
-                        .getAnnotation(ArcRequestIntercept.class);
+                            .getAnnotation(ArcRequestIntercept.class);
                     if (legacyAnnotation == null) {
                         ArcSyncEvent annotation = requestHandler.getClass().getAnnotation(ArcSyncEvent.class);
                         if (annotation != null) {
@@ -112,7 +112,7 @@ public final class MessageBroker {
                     }
                 } else if (rpl.getTypeId() == 3) {
                     ArcResponseIntercept legacyAnnotation = requestHandler.getClass()
-                        .getAnnotation(ArcResponseIntercept.class);
+                            .getAnnotation(ArcResponseIntercept.class);
                     if (legacyAnnotation == null) {
                         ArcSyncEvent annotation = requestHandler.getClass().getAnnotation(ArcSyncEvent.class);
                         if (annotation != null) {
@@ -169,8 +169,9 @@ public final class MessageBroker {
                 } else {
                     payload = new RequestPayload();
                     RequestPayload rpl = (RequestPayload) payload;
-                    rpl.setCurrentUserId(node.get("currentUserId").asText());
+                    //rpl.setCurrentUserId(node.get("currentUserId").asText());
                 }
+                payload.setCurrentUserId(node.get("currentUserId").asText());
                 payload.setVersion(node.get("version").asInt());
                 payload.setKey(addNamespace(node.get("eventName").asText()));
                 payload.setTypeId(typeId);
@@ -224,7 +225,7 @@ public final class MessageBroker {
             ((RequestOutPayload) out).setUuid(((RequestPayload) payload).getUuid());
             ((RequestOutPayload) out).setError(((RequestPayload) payload).getError());
         }
-
+        out.setCurrentUserId(payload.getCurrentUserId());
         out.setBody(payload.getBody());
         return out;
     }
