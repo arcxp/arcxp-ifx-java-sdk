@@ -64,9 +64,7 @@ public final class MessageBroker {
         } else {
             processPayloadWithReturn(payload);
         }
-        Payload response = processErrors(payload);
-
-        return stringifyResponse(response);
+        return stringifyResponse(processErrors(payload));
     }
 
     private void processPayload(Payload payload) {
@@ -89,7 +87,6 @@ public final class MessageBroker {
                 }
             }
         }
-
     }
 
     private void processPayloadWithReturn(Payload payload) {
@@ -169,11 +166,11 @@ public final class MessageBroker {
                 } else {
                     payload = new RequestPayload();
                     RequestPayload rpl = (RequestPayload) payload;
-                    //rpl.setCurrentUserId(node.get("currentUserId").asText());
                 }
-                payload.setCurrentUserId(node.get("currentUserId").asText());
+
                 payload.setVersion(node.get("version").asInt());
-                payload.setKey(addNamespace(node.get("eventName").asText()));
+                payload.setKey(node.get("eventName").asText());
+                payload.setEventName(node.get("eventName").asText());
                 payload.setTypeId(typeId);
 
                 // optional fields
@@ -182,6 +179,9 @@ public final class MessageBroker {
                 }
                 if (node.hasNonNull("uuid")) {
                     payload.setUuid(node.get("uuid").asText());
+                }
+                if (node.hasNonNull("currentUserId")) {
+                    payload.setCurrentUserId(node.get("currentUserId").asText());
                 }
             }
         } else {
@@ -219,15 +219,15 @@ public final class MessageBroker {
     }
 
     private Payload processErrors(Payload payload) {
-        Payload out = payload;
-        if (payload instanceof RequestPayload) {
-            out = new RequestOutPayload();
+        if (payload instanceof RequestPayload && ((RequestPayload) payload).getError() != null) {
+            Payload out = new RequestOutPayload();
             ((RequestOutPayload) out).setUuid(((RequestPayload) payload).getUuid());
             ((RequestOutPayload) out).setError(((RequestPayload) payload).getError());
+            out.setCurrentUserId(payload.getCurrentUserId());
+            out.setBody(payload.getBody());
+            return out;
         }
-        out.setCurrentUserId(payload.getCurrentUserId());
-        out.setBody(payload.getBody());
-        return out;
+        return payload;
     }
 
     private String addNamespace(String key) {

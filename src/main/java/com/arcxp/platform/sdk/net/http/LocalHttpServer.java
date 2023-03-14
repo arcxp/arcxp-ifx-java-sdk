@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
@@ -11,6 +12,7 @@ import javax.annotation.PreDestroy;
 
 import com.amazonaws.util.StringUtils;
 import com.arcxp.platform.sdk.broker.MessageBroker;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -43,6 +45,9 @@ public class LocalHttpServer {
     public static final String VERSION_NAME = "version";
     public static final String TYPE_ID_NAME = "typeId";
     public static final String ASYNC_NAME = "async";
+    public static final String UUID_NAME = "uuid";
+    public static final String USER_ID_NAME = "currentUserId";
+    public static final String ATTRIBUTE_BODY_NAME = "body";
     public static final String EVENT_PAYLOAD_TYPE_ID = "1";
     public static final String REQUEST_PAYLOAD_TYPE_ID = "5";
     private final HttpServer server;
@@ -63,18 +68,14 @@ public class LocalHttpServer {
                                 HttpEntity requestEntity = ((HttpEntityEnclosingRequest) request).getEntity();
                                 String reqEnt = EntityUtils.toString(requestEntity);
                                 List<NameValuePair> parameters = getParameters(request);
-                                Map<String, String> payload = objectMapper.readValue(reqEnt, Map.class);
-                                for (NameValuePair param : parameters) {
-                                    if (!StringUtils.isNullOrEmpty(param.getName())) {
-                                        payload.put(param.getName(), param.getValue());
-                                    }
+                                Map<String, String> inboundPayload = objectMapper.readValue(reqEnt, Map.class);
+                                if (inboundPayload.containsKey(ATTRIBUTE_BODY_NAME)) {
+                                    LOG.error("Please use POST with URL params to /ifx/local/invoke/{eventname}?"
+                                            + "{attribute=value} for local testing");
+                                    response.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                                 }
-                                payload.put(TYPE_ID_NAME,
-                                        (payload.get(ASYNC_NAME).equalsIgnoreCase("true") ? EVENT_PAYLOAD_TYPE_ID
-                                            : REQUEST_PAYLOAD_TYPE_ID));
-                                payload.put(VERSION_NAME, "2");
-                                String msg = objectMapper.writeValueAsString(payload);
-                                String responseBody = messageBroker.handle(msg);
+                                String responseBody = messageBroker.handle(buildOutboundPayload(parameters,
+                                        inboundPayload));
                                 StringEntity responseEntity = new StringEntity(responseBody);
                                 response.setEntity(responseEntity);
                                 response.setStatusCode(HttpStatus.SC_OK);
@@ -99,8 +100,43 @@ public class LocalHttpServer {
         List<NameValuePair> params = URLEncodedUtils.parse(
                 uri,
                 Charset.forName("UTF-8"));
+        // This ensures that IF a user specified eventName as a URL param, the integration:event specified in the invoke
+        // will be the final eventName in the list therefore the only one used.
         params.add(new BasicNameValuePair(EVENT_NAME, eventName));
         return params;
+    }
+
+    private String buildOutboundPayload(List<NameValuePair> parameters,
+                                                      Map<String, String> inboundPayload) {
+        Map<String, Object> outboundPayload = new HashMap<>();
+        for (NameValuePair param : parameters) {
+            if (!StringUtils.isNullOrEmpty(param.getName())) {
+                outboundPayload.put(param.getName(), param.getValue());
+            }
+        }
+
+        if (!outboundPayload.containsKey(ASYNC_NAME)) {
+            outboundPayload.put(TYPE_ID_NAME, EVENT_PAYLOAD_TYPE_ID);
+        } else {
+            outboundPayload.put(TYPE_ID_NAME,
+                    (outboundPayload.get(ASYNC_NAME).toString().equalsIgnoreCase("true") ? EVENT_PAYLOAD_TYPE_ID
+                            : REQUEST_PAYLOAD_TYPE_ID));
+        }
+        if (!outboundPayload.containsKey(UUID_NAME)) {
+            outboundPayload.put(VERSION_NAME, "");
+        }
+        if (!outboundPayload.containsKey(USER_ID_NAME)) {
+            outboundPayload.put(VERSION_NAME, "");
+        }
+        outboundPayload.put(VERSION_NAME, "2");
+        outboundPayload.put(ATTRIBUTE_BODY_NAME, inboundPayload);
+        String msg = null;
+        try {
+            msg = objectMapper.writeValueAsString(outboundPayload);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return msg;
     }
 
     @PostConstruct
