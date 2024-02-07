@@ -2,8 +2,6 @@ package com.arcxp.platform.sdk.handlers;
 
 import java.util.Date;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
@@ -11,22 +9,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 
 public class Payload {
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-
     private int version;
-    @JsonIgnore
     private String key;
-
-    private String eventName;
-
     private ObjectNode body;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-
     private int typeId;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-
     private Date time;
-
     private String uuid;
 
     private String currentUserId;
@@ -120,13 +107,5 @@ public class Payload {
 
     public void setCurrentUserId(String currentUserId) {
         this.currentUserId = currentUserId;
-    }
-
-    public String getEventName() {
-        return eventName;
-    }
-
-    public void setEventName(String eventName) {
-        this.eventName = eventName;
     }
 }

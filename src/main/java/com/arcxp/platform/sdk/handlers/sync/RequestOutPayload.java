@@ -1,19 +1,14 @@
 package com.arcxp.platform.sdk.handlers.sync;
 
 import com.arcxp.platform.sdk.handlers.Payload;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Parsed Payload specific for the output from custom endpoints and intercepter handlers.
  */
 public class RequestOutPayload extends Payload {
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-
     private String uuid;
     private ObjectNode body;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-
     private RequestError error;
 
     /**
