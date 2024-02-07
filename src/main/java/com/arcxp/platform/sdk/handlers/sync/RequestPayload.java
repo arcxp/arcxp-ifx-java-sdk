@@ -4,15 +4,13 @@ import com.arcxp.platform.sdk.handlers.Payload;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * Parsed Payload specific for the input from custom endpoint and intercepter handlers.
+ * Parsed Payload specific for the input from custom endpoint and interceptor handlers.
  */
 public final class RequestPayload extends Payload {
-
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private RequestError error;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-
     private String uri;
 
 

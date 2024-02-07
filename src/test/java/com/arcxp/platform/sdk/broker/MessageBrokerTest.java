@@ -1,10 +1,5 @@
 package com.arcxp.platform.sdk.broker;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.arcxp.platform.sdk.Main;
 import com.arcxp.platform.sdk.annotations.ArcAsyncEvent;
 import com.arcxp.platform.sdk.annotations.ArcEndpoint;
 import com.arcxp.platform.sdk.annotations.ArcRequestIntercept;
@@ -15,25 +10,24 @@ import com.arcxp.platform.sdk.handlers.async.EventHandler;
 import com.arcxp.platform.sdk.handlers.async.EventPayload;
 import com.arcxp.platform.sdk.handlers.sync.RequestHandler;
 import com.arcxp.platform.sdk.handlers.sync.RequestPayload;
+import com.arcxp.platform.sdk.utils.MapUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 public class MessageBrokerTest {
 
     @InjectMocks
     private MessageBroker messageBroker;
-
-    @Mock
-    private ObjectMapper objectMapperMock;
 
     private ObjectMapper objectMapper;
 
@@ -88,6 +82,7 @@ public class MessageBrokerTest {
         @Override
         public void handle(RequestPayload payload) {
             calledHandlerName = "SampleEndpoint";
+            calledPayload = payload;
         }
     }
 
@@ -103,148 +98,150 @@ public class MessageBrokerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        Main main = new Main();
-        this.objectMapper = main.objectMapper();
+        this.objectMapper = MapUtils.createObjectMapper();
+        messageBroker.setObjectMapper(MapUtils.createObjectMapper());
         calledHandlerName = null;
         calledPayload = null;
-        setRequestHandlers();
-        setEventHandlers();
+        setupRequestHandlers();
+        setupEventHandlers();
     }
 
 
     @Test
     public void testCartAddRequestInterceptor() throws IOException {
-        // Create sample payload
-        String requestPayloadJson = "{\"key\":\"CART_ADD\", \"typeId\":2, \"uuid\": \"\", \"uri\": \"\", "
-            + "\"currentUserId\": \"\"}";
+        ObjectNode requestPayloadNode = objectMapper.createObjectNode();
+        requestPayloadNode.put("key", "CART_ADD");
+        requestPayloadNode.put("typeId", 2);
+        requestPayloadNode.put("uuid", "");
+        requestPayloadNode.put("uri", "");
+        requestPayloadNode.put("currentUserId", "");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(requestPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
-
-        this.messageBroker.handle(requestPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
         assertEquals("CartAddRequestInterceptor", calledHandlerName);
     }
 
     @Test
     public void testTestSyncBefore() throws IOException {
-        // Create sample payload
-        String requestPayloadJson = "{\"key\":\"SYNC_TEST\", \"typeId\":2, \"uuid\": \"\", \"uri\": \"\", "
-            + "\"currentUserId\": \"\"}";
+        ObjectNode requestPayloadNode = objectMapper.createObjectNode();
+        requestPayloadNode.put("key", "SYNC_TEST");
+        requestPayloadNode.put("typeId", 2);
+        requestPayloadNode.put("uuid", "");
+        requestPayloadNode.put("uri", "");
+        requestPayloadNode.put("currentUserId", "");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(requestPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
-
-        this.messageBroker.handle(requestPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
         assertEquals("TestSyncBefore", calledHandlerName);
     }
 
     @Test(expected = EventPayloadException.class)
-    public void testRequestInterceptorShouldThrowForV2() throws IOException {
-        // Create sample payload
-        String requestPayloadJson =
-            "{\"eventName\":\"commerce:SYNC_TEST\", \"version\": 2, \"typeId\":2, \"uuid\": \"\", "
-                + "\"currentUserId\": \"\"}";
+    public void testRequestInterceptorShouldThrowForV2_DueToMissingBody() throws IOException {
+        ObjectNode requestPayloadNode = objectMapper.createObjectNode();
+        requestPayloadNode.put("eventName", "commerce:SYNC_TEST");
+        requestPayloadNode.put("version", 2);
+        requestPayloadNode.put("typeId", 2);
+        requestPayloadNode.put("uuid", "");
+        requestPayloadNode.put("currentUserId", "");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(requestPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
-
-        this.messageBroker.handle(requestPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
     }
 
     @Test
     public void testCartAddResponseInterceptor() throws IOException {
-        // Create sample payload
-        String requestPayloadJson = "{\"key\":\"CART_ADD\", \"typeId\":3, \"uuid\": \"\", \"uri\": \"\", "
-            + "\"currentUserId\": \"\"}";
+        ObjectNode requestPayloadNode = objectMapper.createObjectNode();
+        requestPayloadNode.put("key", "CART_ADD");
+        requestPayloadNode.put("typeId", 3);
+        requestPayloadNode.put("uuid", "");
+        requestPayloadNode.put("uri", "");
+        requestPayloadNode.put("currentUserId", "");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(requestPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
-
-        this.messageBroker.handle(requestPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
         assertEquals("CartAddResponseInterceptor", calledHandlerName);
     }
 
     @Test
     public void testTestSyncAfter() throws IOException {
-        // Create sample payload
-        String requestPayloadJson = "{\"key\":\"SYNC_TEST\", \"typeId\":3, \"uuid\": \"\", \"uri\": \"\", "
-            + "\"currentUserId\": \"\"}";
+        ObjectNode requestPayloadNode = objectMapper.createObjectNode();
+        requestPayloadNode.put("key", "SYNC_TEST");
+        requestPayloadNode.put("typeId", 3);
+        requestPayloadNode.put("uuid", "");
+        requestPayloadNode.put("uri", "");
+        requestPayloadNode.put("currentUserId", "");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(requestPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
-
-        this.messageBroker.handle(requestPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
         assertEquals("TestSyncAfter", calledHandlerName);
     }
 
     @Test(expected = EventPayloadException.class)
-    public void testResponseInterceptorShouldThrowForV2() throws IOException {
-        // Create sample payload
-        String requestPayloadJson =
-            "{\"eventName\":\"commerce:SYNC_TEST\", \"version\": 2, \"typeId\":3, \"uuid\": \"\", "
-                + "\"currentUserId\": \"\"}";
+    public void testResponseInterceptorShouldThrowForV2_DueToMissingBody() throws IOException {
+        ObjectNode requestPayloadNode = objectMapper.createObjectNode();
+        requestPayloadNode.put("eventName", "commerce:SYNC_TEST");
+        requestPayloadNode.put("version", 2);
+        requestPayloadNode.put("typeId", 3);
+        requestPayloadNode.put("uuid", "");
+        requestPayloadNode.put("currentUserId", "");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(requestPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
-
-        this.messageBroker.handle(requestPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
     }
 
     @Test
     public void testLegacySampleEndpoint() throws IOException {
-        // Create sample payload
-        String requestPayloadJson = "{\"key\":\"\", \"typeId\":4, \"uuid\": \"\", \"uri\": \"some/url/1\", "
-            + "\"currentUserId\": \"\"}";
+        ObjectNode requestPayloadNode = objectMapper.createObjectNode();
+        requestPayloadNode.put("key", "");
+        requestPayloadNode.put("typeId", 4);
+        requestPayloadNode.put("uuid", "");
+        requestPayloadNode.put("uri", "some/url/1");
+        requestPayloadNode.put("currentUserId", "");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(requestPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
-
-        this.messageBroker.handle(requestPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
         assertEquals("LegacySampleEndpoint", calledHandlerName);
     }
 
     @Test
     public void testSampleEndpoint() throws IOException {
-        // Create sample payload
-        String requestPayloadJson = "{\"key\":\"\", \"typeId\":4, \"uuid\": \"\", \"uri\": \"some/url/2\", "
-            + "\"currentUserId\": \"\"}";
+        ObjectNode requestPayloadNode = objectMapper.createObjectNode();
+        requestPayloadNode.put("key", "");
+        requestPayloadNode.put("typeId", 4);
+        requestPayloadNode.put("uuid", "");
+        requestPayloadNode.put("uri", "some/url/2");
+        requestPayloadNode.put("currentUserId", "");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(requestPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
-
-        this.messageBroker.handle(requestPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
         assertEquals("SampleEndpoint", calledHandlerName);
     }
 
     @Test(expected = EventPayloadException.class)
-    public void testCustomEndpointShouldThrowForV2() throws IOException {
-        // Create sample payload
-        String requestPayloadJson =
-            "{\"eventName\":\"commerce:some/url\", \"version\": 2, \"typeId\": 4, \"uuid\": \"\", "
-                + "\"currentUserId\": \"\"}";
+    public void testCustomEndpointShouldThrowForV2_DueToMissingBody() throws IOException {
+        ObjectNode requestPayloadNode = objectMapper.createObjectNode();
+        requestPayloadNode.put("eventName", "commerce:some/url");
+        requestPayloadNode.put("version", 2);
+        requestPayloadNode.put("typeId", 4);
+        requestPayloadNode.put("uuid", "");
+        requestPayloadNode.put("currentUserId", "");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(requestPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
-
-        this.messageBroker.handle(requestPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
     }
 
+    @Test
     public void testSyncEventV2() throws IOException {
-        // Create sample payload
-        String requestPayloadJson =
-            "{\"eventName\":\"commerce:some/url\", \"version\": 2, \"typeId\": 5, \"uuid\": \"uuid123\", "
-                + "\"currentUserId\": \"userid123\", \"body\": {\"test\": \"sync body\"}}";
+        ObjectNode requestPayloadNode = objectMapper.createObjectNode();
+        requestPayloadNode.put("eventName", "commerce:some/url/2");
+        requestPayloadNode.put("version", 2);
+        requestPayloadNode.put("typeId", 5);
+        requestPayloadNode.put("uuid", "uuid123");
+        requestPayloadNode.put("currentUserId", "userid123");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(requestPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
+        ObjectNode bodyNode = objectMapper.createObjectNode();
+        bodyNode.put("test", "sync body");
+        requestPayloadNode.set("body", bodyNode);
 
-        this.messageBroker.handle(requestPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
+
         assertEquals("SampleEndpoint", calledHandlerName);
         assertEquals(2, calledPayload.getVersion());
         assertEquals(5, calledPayload.getTypeId());
@@ -255,13 +252,11 @@ public class MessageBrokerTest {
 
     @Test
     public void testAsyncEventWithNamespace() throws IOException {
-        // Create sample payload
-        String eventPayloadJson = "{\"eventType\":\"pagebuilder:VERIFY_EMAIL\",\"eventTime\": \"\"}";
+        ObjectNode eventPayloadNode = objectMapper.createObjectNode();
+        eventPayloadNode.put("eventType", "pagebuilder:VERIFY_EMAIL");
+        eventPayloadNode.put("eventTime", "");
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(eventPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
-
-        this.messageBroker.handle(eventPayloadJson);
+        this.messageBroker.handle(objectMapper.writeValueAsString(eventPayloadNode));
 
         assertEquals("TestAsync", calledHandlerName);
     }
@@ -269,14 +264,21 @@ public class MessageBrokerTest {
     @Test
     public void testAsyncEventV2WithNamespace() throws IOException {
         // Create sample payload
-        String eventPayloadJson =
-            "{\"eventName\": \"pagebuilder:VERIFY_EMAIL\", \"version\": 2, \"typeId\": 1, \"eventTime\": 1648496000, "
-                + "\"currentUserId\": \"\", \"body\": {\"test\": \"async body\"}}";
+        ObjectNode eventPayloadNode = objectMapper.createObjectNode();
 
-        ObjectNode node = (ObjectNode) this.objectMapper.readTree(eventPayloadJson);
-        when(this.objectMapperMock.readTree(anyString())).thenReturn(node);
+        // Set up the properties directly on the ObjectNode
+        eventPayloadNode.put("eventName", "pagebuilder:VERIFY_EMAIL");
+        eventPayloadNode.put("version", 2);
+        eventPayloadNode.put("typeId", 1);
+        eventPayloadNode.put("eventTime", 1648496000);
+        eventPayloadNode.put("currentUserId", "");
 
-        this.messageBroker.handle(eventPayloadJson);
+        ObjectNode bodyNode = objectMapper.createObjectNode();
+        bodyNode.put("test", "async body");
+        eventPayloadNode.set("body", bodyNode);
+
+
+        this.messageBroker.handle(objectMapper.writeValueAsString(eventPayloadNode));
 
         assertEquals("TestAsync", calledHandlerName);
         assertEquals(2, calledPayload.getVersion());
@@ -285,7 +287,78 @@ public class MessageBrokerTest {
         assertEquals("async body", calledPayload.getBody().get("test").asText());
     }
 
-    private void setRequestHandlers() {
+    @Test(expected = EventPayloadException.class)
+    public void testPayloadPassedDirectlyToHandler_ShouldThrowIfKeyNotProvided() throws IOException {
+        // Create sample payload
+        ObjectNode eventPayloadNode = objectMapper.createObjectNode();
+
+        // Set up the properties directly on the ObjectNode
+        eventPayloadNode.put("eventName", "pagebuilder:VERIFY_EMAIL");
+        eventPayloadNode.put("version", 2);
+        eventPayloadNode.put("typeId", 1);
+        eventPayloadNode.put("eventTime", 1648496000);
+        eventPayloadNode.put("currentUserId", "");
+
+        ObjectNode bodyNode = objectMapper.createObjectNode();
+        bodyNode.put("test", "async body");
+        eventPayloadNode.set("body", bodyNode);
+
+
+        this.messageBroker.setShouldTransformPayload(false);
+        this.messageBroker.handle(objectMapper.writeValueAsString(eventPayloadNode));
+    }
+
+    @Test
+    public void testPayloadPassedDirectlyToHandler_ShouldSucceed() throws IOException {
+        // Create sample payload
+        ObjectNode eventPayloadNode = objectMapper.createObjectNode();
+
+        // Set up the properties directly on the ObjectNode
+        eventPayloadNode.put("key", "pagebuilder:VERIFY_EMAIL");
+        eventPayloadNode.put("time", "1679696377"); // March 24th, 2023 in Epoch Seconds
+
+        ObjectNode bodyNode = objectMapper.createObjectNode();
+        bodyNode.put("someKey", "someValue");
+        eventPayloadNode.set("body", bodyNode);
+
+        this.messageBroker.setShouldTransformPayload(false);
+        this.messageBroker.handle(objectMapper.writeValueAsString(eventPayloadNode));
+
+        assertEquals("TestAsync", calledHandlerName);
+        assertEquals(2, calledPayload.getVersion());
+        assertEquals(1, calledPayload.getTypeId());
+
+        // Java's internal date class subtracts 1900 from the year when calling `getYear()`
+        assertEquals(2023, calledPayload.getTime().getYear() + 1900);
+
+        assertEquals(2, calledPayload.getTime().getMonth()); // Month is 0 indexed
+        assertEquals(24, calledPayload.getTime().getDate());
+
+        assertEquals("someValue", calledPayload.getBody().get("someKey").asText());
+    }
+
+    @Test
+    public void testPayloadPassedDirectlyToHandlerWithUtf8Chars_ShouldSucceed() throws IOException {
+        // Create sample payload
+        ObjectNode eventPayloadNode = objectMapper.createObjectNode();
+
+        // Set up the properties directly on the ObjectNode
+        eventPayloadNode.put("key", "pagebuilder:VERIFY_EMAIL");
+        eventPayloadNode.put("time", "1679696377"); // March 24th, 2023 in Epoch Seconds
+
+        ObjectNode bodyNode = objectMapper.createObjectNode();
+        bodyNode.put("aUtf8Char", "€");
+        eventPayloadNode.set("body", bodyNode);
+
+        this.messageBroker.setShouldTransformPayload(false);
+        this.messageBroker.handle(objectMapper.writeValueAsString(eventPayloadNode));
+
+        assertEquals("TestAsync", calledHandlerName);
+        assertEquals("€", calledPayload.getBody().get("aUtf8Char").asText());
+    }
+
+
+    private void setupRequestHandlers() {
         // Add test handlers
         List<RequestHandler> requestHandlers = new ArrayList<>();
         requestHandlers.add(new CartAddRequestInterceptor());
@@ -298,7 +371,7 @@ public class MessageBrokerTest {
         messageBroker.setRequestHandlers(requestHandlers);
     }
 
-    private void setEventHandlers() {
+    private void setupEventHandlers() {
         // Add test handlers
         List<EventHandler> eventHandlers = new ArrayList<>();
         eventHandlers.add(new TestAsync());

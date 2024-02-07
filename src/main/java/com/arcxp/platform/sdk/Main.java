@@ -1,10 +1,7 @@
 package com.arcxp.platform.sdk;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
+import com.arcxp.platform.sdk.utils.MapUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -25,19 +22,14 @@ public class Main {
     }
     
     /**
-     * Shared Object Mapper for Serialization.
+     * Shared Object Mapper for Serialization. Constructed as a bean so that @Autowired instances of
+     * it use this instance.
      *
      * @return ObjectMapper
      */
     @Bean
     public ObjectMapper objectMapper() {
-        ObjectMapper objectMapper = JsonMapper.builder()
-            .addModule(new JavaTimeModule())
-            .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
-            .build();
-        return objectMapper;
+        return MapUtils.createObjectMapper();
     }
 
 

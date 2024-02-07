@@ -7,4 +7,5 @@ import com.arcxp.platform.sdk.handlers.Payload;
  */
 
 public final class EventPayload extends Payload {
+
 }

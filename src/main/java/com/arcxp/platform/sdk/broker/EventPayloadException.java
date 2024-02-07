@@ -7,4 +7,8 @@ public final class EventPayloadException extends RuntimeException {
     public EventPayloadException() {
         super("Invalid event payload");
     }
+
+    public EventPayloadException(String message) {
+        super(message);
+    }
 }

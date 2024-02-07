@@ -1,9 +1,5 @@
 package com.arcxp.platform.sdk.broker;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.arcxp.platform.sdk.annotations.ArcAsyncEvent;
 import com.arcxp.platform.sdk.annotations.ArcEndpoint;
 import com.arcxp.platform.sdk.annotations.ArcEvent;
@@ -19,11 +15,16 @@ import com.arcxp.platform.sdk.handlers.sync.RequestPayload;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Broker class that delagates Lambda Payload Requests to the appropriate handlers for each Handler type.
@@ -34,6 +35,10 @@ public final class MessageBroker {
 
     private static final Logger LOG = LoggerFactory.getLogger(MessageBroker.class);
     private static final String DEFAULT_NAMESPACE = "commerce:";
+
+    private boolean shouldTransformPayload = true;
+    private boolean shouldPropogateExceptions = false;
+
     @Lazy
     @Autowired
     private List<EventHandler> eventHandlers;
@@ -56,15 +61,21 @@ public final class MessageBroker {
             payload = createPayload(message);
         } catch (Exception exception) {
             LOG.error(exception.getMessage(), exception);
-            throw new EventPayloadException();
+            if (shouldPropogateExceptions) {
+                throw new EventPayloadException(exception.getMessage());
+            } else {
+                throw new EventPayloadException();
+            }
         }
 
-        if (payload.getTypeId() == 1 /*Event*/) {
+        if (payload.getTypeId() == 1 /*Async Event*/) {
             processPayload(payload);
         } else {
             processPayloadWithReturn(payload);
         }
-        return stringifyResponse(processErrors(payload));
+        Payload response = processErrors(payload);
+
+        return stringifyResponse(response);
     }
 
     private void processPayload(Payload payload) {
@@ -87,6 +98,7 @@ public final class MessageBroker {
                 }
             }
         }
+
     }
 
     private void processPayloadWithReturn(Payload payload) {
@@ -148,63 +160,71 @@ public final class MessageBroker {
 
     }
 
-    private Payload createPayload(String message) {
+    private Payload createPayload(String message) throws JsonProcessingException {
         Payload payload = null;
-        ObjectNode node = null;
+        ObjectNode requestNode;
 
         try {
-            node = (ObjectNode) objectMapper.readTree(message);
+            requestNode = (ObjectNode) objectMapper.readTree(message);
         } catch (JsonProcessingException e) {
-            LOG.error("Unable to deserialize", e);
+            LOG.error("Unable to deserialize incoming message payload", e);
+            throw e;
         }
 
-        if (node.has("version") && node.get("version").asInt() > 1) {
-            int typeId = node.get("typeId").asInt();
+        // We should not transform the payload, and instead pass json directly to handlers. Payload is routed to a
+        // handler based on the `key` property.
+        if (!shouldTransformPayload) {
+            boolean async = !requestNode.has("typeId") || "1".equals(requestNode.get("typeId").asText());
+            payload = getDefaultPayload(async);
+
+            // Override with values from requestNode
+            overridePayloadWithRequestNode(payload, requestNode);
+
+            return payload;
+        }
+
+        if (requestNode.has("version") && requestNode.get("version").asInt() > 1) {
+            int typeId = requestNode.get("typeId").asInt();
             if (typeId == 1 || typeId == 5) {
                 if (typeId == 1) {
                     payload = new EventPayload();
                 } else {
                     payload = new RequestPayload();
-                    RequestPayload rpl = (RequestPayload) payload;
                 }
-
-                payload.setVersion(node.get("version").asInt());
-                payload.setKey(node.get("eventName").asText());
-                payload.setEventName(node.get("eventName").asText());
+                payload.setCurrentUserId(requestNode.get("currentUserId").asText());
+                payload.setVersion(requestNode.get("version").asInt());
+                payload.setKey(addNamespace(requestNode.get("eventName").asText()));
                 payload.setTypeId(typeId);
 
                 // optional fields
-                if (node.hasNonNull("eventTime")) {
-                    payload.setTime(new Date(node.get("eventTime").asLong()));
+                if (requestNode.hasNonNull("eventTime")) {
+                    payload.setTime(new Date(requestNode.get("eventTime").asLong()));
                 }
-                if (node.hasNonNull("uuid")) {
-                    payload.setUuid(node.get("uuid").asText());
-                }
-                if (node.hasNonNull("currentUserId")) {
-                    payload.setCurrentUserId(node.get("currentUserId").asText());
+                if (requestNode.hasNonNull("uuid")) {
+                    payload.setUuid(requestNode.get("uuid").asText());
                 }
             }
         } else {
             // Legacy structure
-            if (node.has("eventType")) {
+            if (requestNode.has("eventType")) {
                 payload = new EventPayload();
                 payload.setVersion(1);
-                payload.setKey(addNamespace(node.get("eventType").asText()));
+                payload.setKey(addNamespace(requestNode.get("eventType").asText()));
                 payload.setTypeId(1);
-                ((EventPayload) payload).setTime(new Date(node.get("eventTime").asLong()));
-            } else if (node.has("key")) {
+                ((EventPayload) payload).setTime(new Date(requestNode.get("eventTime").asLong()));
+            } else if (requestNode.has("key")) {
                 payload = new RequestPayload();
                 payload.setVersion(1);
                 RequestPayload rpl = (RequestPayload) payload;
-                rpl.setUuid(node.get("uuid").asText());
-                rpl.setKey(addNamespace(node.get("key").asText()));
-                rpl.setTypeId(node.get("typeId").asInt());
-                rpl.setUri(node.get("uri").asText());
-                rpl.setCurrentUserId(node.get("currentUserId").asText());
+                rpl.setUuid(requestNode.get("uuid").asText());
+                rpl.setKey(addNamespace(requestNode.get("key").asText()));
+                rpl.setTypeId(requestNode.get("typeId").asInt());
+                rpl.setUri(requestNode.get("uri").asText());
+                rpl.setCurrentUserId(requestNode.get("currentUserId").asText());
             }
         }
 
-        payload.setBody((ObjectNode) node.get("body"));
+        payload.setBody((ObjectNode) requestNode.get("body"));
         return payload;
     }
 
@@ -218,11 +238,20 @@ public final class MessageBroker {
         return result;
     }
 
+    /**
+     * Processes the given payload for errors. If the payload is an instance of {@link Payload}
+     * and contains an error, a new {@link RequestOutPayload} is created with the error
+     * information and other details copied from the input payload.
+     *
+     * @param payload The input payload which is to be checked for errors.
+     * @return A new {@link RequestOutPayload} containing the error details if an error is present,
+     *         or the original payload if no errors are found.
+     */
     private Payload processErrors(Payload payload) {
         if (payload instanceof RequestPayload && ((RequestPayload) payload).getError() != null) {
-            Payload out = new RequestOutPayload();
-            ((RequestOutPayload) out).setUuid(((RequestPayload) payload).getUuid());
-            ((RequestOutPayload) out).setError(((RequestPayload) payload).getError());
+            RequestOutPayload out = new RequestOutPayload();
+            out.setUuid(payload.getUuid());
+            out.setError(((RequestPayload) payload).getError());
             out.setCurrentUserId(payload.getCurrentUserId());
             out.setBody(payload.getBody());
             return out;
@@ -249,4 +278,86 @@ public final class MessageBroker {
         Map<String, Object> data;
     }
 
+    public void setShouldTransformPayload(boolean shouldTransformPayload) {
+        this.shouldTransformPayload = shouldTransformPayload;
+    }
+
+    public void setShouldPropogateExceptions(boolean shouldPropogateExceptions) {
+        this.shouldPropogateExceptions = shouldPropogateExceptions;
+    }
+
+    /**
+     * Overrides the properties of a given Payload object with the values present in an ObjectNode.
+     * The method checks for the presence of each expected property within the ObjectNode. If a property
+     * is found and is non-null, its value is used to update the corresponding property in the Payload object.
+     * The method specifically handles the 'key' property and ensures it is not blank. If it is, an exception is thrown.
+     * For the 'time' property, the value is expected to be in epoch seconds and is converted to milliseconds.
+     * The 'body' property is an ObjectNode and is merged with the existing body of the Payload.
+     *
+     * @param payload     The Payload object to be updated.
+     * @param requestNode The ObjectNode containing potential override values.
+     * @throws EventPayloadException If the 'key' property is missing or blank, or if the 'time' property is not in a
+     *                               valid epoch format.
+     */
+    private void overridePayloadWithRequestNode(Payload payload, ObjectNode requestNode) throws EventPayloadException {
+        // Update key if it's present and not blank
+        if (requestNode.hasNonNull("key") && !StringUtils.isBlank(requestNode.get("key").asText())) {
+            payload.setKey(requestNode.get("key").asText());
+        } else {
+            throw new EventPayloadException("Key must be provided and cannot be blank");
+        }
+
+        // Update other fields if present
+        if (requestNode.hasNonNull("version")) {
+            payload.setVersion(requestNode.get("version").asInt());
+        }
+
+        if (requestNode.hasNonNull("typeId")) {
+            payload.setTypeId(requestNode.get("typeId").asInt());
+        }
+
+        if (requestNode.hasNonNull("time")) {
+            String timeStr = requestNode.get("time").asText();
+            try {
+                long time = Long.parseLong(timeStr);
+                payload.setTime(new Date(time * 1000));
+            } catch (NumberFormatException e) {
+                throw new EventPayloadException("Time is not a valid epoch format");
+            }
+        }
+
+        if (requestNode.hasNonNull("uuid")) {
+            payload.setUuid(requestNode.get("uuid").asText());
+        }
+
+        if (requestNode.hasNonNull("currentUserId")) {
+            payload.setCurrentUserId(requestNode.get("currentUserId").asText());
+        }
+
+        // If the body is a nested object, you should merge it
+        if (requestNode.hasNonNull("body") && requestNode.get("body").isObject()) {
+            payload.getBody().setAll((ObjectNode) requestNode.get("body"));
+        }
+    }
+
+    private Payload getDefaultPayload(boolean async) {
+        Payload payload;
+        if (async) {
+            payload = new EventPayload();
+            payload.setTypeId(1);
+        } else {
+            payload = new RequestPayload();
+            payload.setTypeId(5);
+        }
+        payload.setBody(objectMapper.createObjectNode());
+        payload.setVersion(2);
+        payload.setTime(new Date());
+        payload.setUuid("");
+        payload.setCurrentUserId("");
+        return payload;
+    }
+
+    public void setObjectMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 }

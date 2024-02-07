@@ -8,12 +8,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * Parsed Payload specific for the output from custom endpoints and intercepter handlers.
  */
 public class RequestOutPayload extends Payload {
-    @JsonInclude(JsonInclude.Include.NON_NULL)
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String uuid;
     private ObjectNode body;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private RequestError error;
 
     /**

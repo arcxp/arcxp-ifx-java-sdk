@@ -13,3 +13,4 @@
 cfn/configs/
 codebuild/
 codequality/
+.github
