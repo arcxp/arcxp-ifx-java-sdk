@@ -115,6 +115,7 @@ public class MessageBrokerTest {
         requestPayloadNode.put("uuid", "");
         requestPayloadNode.put("uri", "");
         requestPayloadNode.put("currentUserId", "");
+        requestPayloadNode.put("invocationId", "");
 
         this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
@@ -129,6 +130,7 @@ public class MessageBrokerTest {
         requestPayloadNode.put("uuid", "");
         requestPayloadNode.put("uri", "");
         requestPayloadNode.put("currentUserId", "");
+        requestPayloadNode.put("invocationId", "");
 
         this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
@@ -155,6 +157,7 @@ public class MessageBrokerTest {
         requestPayloadNode.put("uuid", "");
         requestPayloadNode.put("uri", "");
         requestPayloadNode.put("currentUserId", "");
+        requestPayloadNode.put("invocationId", "");
 
         this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
@@ -169,6 +172,7 @@ public class MessageBrokerTest {
         requestPayloadNode.put("uuid", "");
         requestPayloadNode.put("uri", "");
         requestPayloadNode.put("currentUserId", "");
+        requestPayloadNode.put("invocationId", "");
 
         this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
@@ -195,6 +199,7 @@ public class MessageBrokerTest {
         requestPayloadNode.put("uuid", "");
         requestPayloadNode.put("uri", "some/url/1");
         requestPayloadNode.put("currentUserId", "");
+        requestPayloadNode.put("invocationId", "");
 
         this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
@@ -209,6 +214,7 @@ public class MessageBrokerTest {
         requestPayloadNode.put("uuid", "");
         requestPayloadNode.put("uri", "some/url/2");
         requestPayloadNode.put("currentUserId", "");
+        requestPayloadNode.put("invocationId", "");
 
         this.messageBroker.handle(objectMapper.writeValueAsString(requestPayloadNode));
 
@@ -233,6 +239,7 @@ public class MessageBrokerTest {
         requestPayloadNode.put("eventName", "commerce:some/url/2");
         requestPayloadNode.put("version", 2);
         requestPayloadNode.put("typeId", 5);
+        requestPayloadNode.put("invocationId", "123456");
         requestPayloadNode.put("uuid", "uuid123");
         requestPayloadNode.put("currentUserId", "userid123");
 
@@ -245,6 +252,7 @@ public class MessageBrokerTest {
         assertEquals("SampleEndpoint", calledHandlerName);
         assertEquals(2, calledPayload.getVersion());
         assertEquals(5, calledPayload.getTypeId());
+        assertEquals("123456", calledPayload.getInvocationId());
         assertEquals("uuid123", calledPayload.getUuid());
         assertEquals("userid123", ((RequestPayload) calledPayload).getCurrentUserId());
         assertEquals("sync body", calledPayload.getBody().get("test").asText());
@@ -255,6 +263,7 @@ public class MessageBrokerTest {
         ObjectNode eventPayloadNode = objectMapper.createObjectNode();
         eventPayloadNode.put("eventType", "pagebuilder:VERIFY_EMAIL");
         eventPayloadNode.put("eventTime", "");
+        eventPayloadNode.put("invocationId", "");
 
         this.messageBroker.handle(objectMapper.writeValueAsString(eventPayloadNode));
 
@@ -270,6 +279,7 @@ public class MessageBrokerTest {
         eventPayloadNode.put("eventName", "pagebuilder:VERIFY_EMAIL");
         eventPayloadNode.put("version", 2);
         eventPayloadNode.put("typeId", 1);
+        eventPayloadNode.put("invocationId", "123456");
         eventPayloadNode.put("eventTime", 1648496000);
         eventPayloadNode.put("currentUserId", "");
 
@@ -283,6 +293,7 @@ public class MessageBrokerTest {
         assertEquals("TestAsync", calledHandlerName);
         assertEquals(2, calledPayload.getVersion());
         assertEquals(1, calledPayload.getTypeId());
+        assertEquals("123456", calledPayload.getInvocationId());
         assertEquals(1648496000, calledPayload.getTime().getTime());
         assertEquals("async body", calledPayload.getBody().get("test").asText());
     }
@@ -316,6 +327,7 @@ public class MessageBrokerTest {
         // Set up the properties directly on the ObjectNode
         eventPayloadNode.put("key", "pagebuilder:VERIFY_EMAIL");
         eventPayloadNode.put("time", "1679696377"); // March 24th, 2023 in Epoch Seconds
+        eventPayloadNode.put("invocationId", "");
 
         ObjectNode bodyNode = objectMapper.createObjectNode();
         bodyNode.put("someKey", "someValue");
@@ -345,6 +357,7 @@ public class MessageBrokerTest {
         // Set up the properties directly on the ObjectNode
         eventPayloadNode.put("key", "pagebuilder:VERIFY_EMAIL");
         eventPayloadNode.put("time", "1679696377"); // March 24th, 2023 in Epoch Seconds
+        eventPayloadNode.put("invocationId", "");
 
         ObjectNode bodyNode = objectMapper.createObjectNode();
         bodyNode.put("aUtf8Char", "€");
@@ -379,4 +392,3 @@ public class MessageBrokerTest {
         messageBroker.setEventHandlers(eventHandlers);
     }
 }
-

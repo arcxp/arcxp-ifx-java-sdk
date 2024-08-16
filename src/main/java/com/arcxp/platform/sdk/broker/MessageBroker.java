@@ -170,6 +170,8 @@ public final class MessageBroker {
             LOG.error("Unable to deserialize incoming message payload", e);
             throw e;
         }
+        
+        LOG.info("Invocation ID: " + requestNode.get("invocationId").asText());
 
         // We should not transform the payload, and instead pass json directly to handlers. Payload is routed to a
         // handler based on the `key` property.
@@ -183,6 +185,8 @@ public final class MessageBroker {
             return payload;
         }
 
+
+
         if (requestNode.has("version") && requestNode.get("version").asInt() > 1) {
             int typeId = requestNode.get("typeId").asInt();
             if (typeId == 1 || typeId == 5) {
@@ -191,10 +195,15 @@ public final class MessageBroker {
                 } else {
                     payload = new RequestPayload();
                 }
+
                 payload.setCurrentUserId(requestNode.get("currentUserId").asText());
                 payload.setVersion(requestNode.get("version").asInt());
                 payload.setKey(addNamespace(requestNode.get("eventName").asText()));
                 payload.setTypeId(typeId);
+
+                if (requestNode.has("invocationId")) {
+                    payload.setInvocationId(requestNode.get("invocationId").asText());
+                }
 
                 // optional fields
                 if (requestNode.hasNonNull("eventTime")) {

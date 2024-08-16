@@ -14,3 +14,5 @@ cfn/configs/
 codebuild/
 codequality/
 .github
+jenkins
+terraform

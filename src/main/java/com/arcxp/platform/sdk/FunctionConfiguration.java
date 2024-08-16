@@ -26,7 +26,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 
@@ -52,9 +51,9 @@ public class FunctionConfiguration {
     public Function<Message<String>, Message<String>> handler() {
         return value -> {
             String keyArn = System.getenv("DD_API_KEY_SECRET_ARN");
+            Context context = value.getHeaders().get("aws-context", Context.class);
  
             if (keyArn != null && !keyArn.isEmpty()) {
-                Context context = value.getHeaders().get("aws-context", Context.class);
 
                 Headerable headerPlayload = new Headerable() {
 
@@ -73,9 +72,8 @@ public class FunctionConfiguration {
                 DDLambda ddl = new DDLambda(headerPlayload, context);
             }
 
-            MessageHeaders headers = value.getHeaders();
-            if (headers != null) {
-                MDC.put("AWSRequestId", headers.get("lambda-runtime-aws-request-id", String.class));
+            if (context != null) {
+                MDC.put("AWSRequestId", context.getAwsRequestId());
             }
             String response = this.messageBroker.handle(value.getPayload());
             MDC.remove("AWSRequestId");

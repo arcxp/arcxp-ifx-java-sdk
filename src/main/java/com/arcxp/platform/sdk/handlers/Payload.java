@@ -22,6 +22,8 @@ public class Payload {
 
     private String currentUserId;
 
+    private String invocationId;
+
     /**
      * The version of the payload.
      *
@@ -111,5 +113,14 @@ public class Payload {
 
     public void setCurrentUserId(String currentUserId) {
         this.currentUserId = currentUserId;
+    }
+
+
+    public String getInvocationId() {
+        return invocationId;
+    }
+
+    public void setInvocationId(String invocationId) {
+        this.invocationId = invocationId;
     }
 }
